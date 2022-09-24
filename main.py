@@ -32,13 +32,6 @@ import matplotlib.pyplot as plt
 
 # read data
 data_dir = './ffdfc23'
-# data_dir = '../celeb-df-120-60(1.3)'
-# data_dir = '../timit-lq-10000-2800'
-# data_dir = '../data-400-train-test'
-# data_dir = '../new_add_exp_FF++/F2F/c23'
-# data_dir = '../new_add_exp_FF++/DF/c23'
-# data_dir = '../ff_all_new/data_c23'
-# data_dir = '../new_add_exp_FF++_DF_c23'
 
 
 data_transform = {
@@ -82,7 +75,7 @@ from CDCN_model import CDCN_my
 model = CDCN_my
 
 
-###加载训练好的模型，多卡训练时参数前面会加上module,要手动去掉
+###load the pretrained model
 # dic = torch.load('./save_model/df_0.1.pth')  #the best para
 # from collections import OrderedDict
 # new_state_dict = OrderedDict()
@@ -104,6 +97,8 @@ def adjust_learning_rate(epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
+
+######## define loss function        
 loss_f = torch.nn.CrossEntropyLoss()
 l1loss = nn.L1Loss()
 mseloss = nn.MSELoss()
@@ -111,7 +106,8 @@ smoothl1 = nn.SmoothL1Loss()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.00002)
 
-model = torch.nn.DataParallel(model,device_ids=[0,1]) #trained with two GPUs
+#trained with two GPUs in this paper
+model = torch.nn.DataParallel(model,device_ids=[0,1]) 
 model = model.cuda()
 
 epoch_n = 20
@@ -188,8 +184,7 @@ def val():
 
     val_acc_org = val_acc / len(val_set)
 
-    return acc_valid,auc_valid,val_acc_org
-
+    return auc_valid,val_acc_org
 
 
 ##### split tensor
@@ -230,7 +225,6 @@ def train(num_epochs):
             optimizer.zero_grad()
 
            
-
             ########################## create binary label 
             binary_label=[] 
             for j in range(len(images)):
@@ -244,6 +238,7 @@ def train(num_epochs):
 
             binary_label = torch.tensor(binary_label)
            
+            # model outputs
             x_consis,x_,w_res_c,w_f_c,w_res_c4,w_f_c4,x_res_4,x_f_4,x_construct_30,x_construct_120,x_construct_60,x_construct_15,y_construct_30,y_construct_120,y_construct_60,y_construct_15,x_res,x_Block1,x_Block2,x_Block3,x_Block4,x_org_f,x_Block11,x_Block22,x_Block33,x_Block44= model(images)
 
             w_res = window_partition(x_res_4,5) # window size=5
@@ -254,7 +249,6 @@ def train(num_epochs):
             w_f_patch = window_partition(x_f_4,15) # window size=15
             
 
-           
             w_res_60 = window_partition(x_Block2,20) # window size=20
             w_f_60 = window_partition(x_Block22,20) # window size=20
             # print('----------',w_res.shape,w_res_60.shape)
@@ -297,7 +291,7 @@ def train(num_epochs):
             # f_cosdis = f_cosdis.to(device3)
 
 
-            ########## computer each patch probably fake rate in binary_label
+            ########## Calculate the possible forgery rate for each patch in binary_label.
             # print('$$$$$$$^^^^^^^^^^',a.shape)
             ddd=[]
             for m in range(len(w_binary_label)):
@@ -333,9 +327,9 @@ def train(num_epochs):
            
 
 
-            #计算两个图像的各个块的余弦距离，[0,1]之间, 9个数，[32,9],label==1
+            #Calculate the cosine distance of each patch of the two images, between [0,1], 9 numbers, [32,9], label==1
             sss = []
-            for k in range(len(w_res)): #取一张输入图 [9,6400]
+            for k in range(len(w_res)): #取一张输入图 [9,6400]patch
                 # print('##########',w_res.shape,w_res[k].shape)
                 ss = []
                 for h in range(len(w_res[k])):  #取9个feature里的一个feature [1.6400]
@@ -346,33 +340,29 @@ def train(num_epochs):
                     ss.append(s)
                 sss.append(ss)
                 cosdis1 = torch.tensor(sss)
-                # print('!!!!!!!!',cosdis1)
+                # print('-----------',cosdis1)
                 cosdis2 = cosdis1.view(-1,9)
 
             dim = 9
             batchsize,z,zz,zzz=images.shape
             cos_lables = torch.ones(batchsize,dim)  #两个矩阵对应元素的余弦距离应该接近1，所以label应该都是1
-            # print('____________',cosdis2.shape, cos_lables.shape)
+            # print('--------------,cosdis2.shape, cos_lables.shape)
             cos_lables = cos_lables.cuda()
 
 
 
-
-            ssss = []
-            for k in range(len(w_res_60)): #取一张输入图 [9,6400]
-                # print('##########',w_res.shape,w_res[k].shape)
-                ss = []
-                for h in range(len(w_res_60[k])):  #取9个feature里的一个feature [1.6400]
-                    # print('**********',w_res[k][h].shape)
-                    s = cosine_similarity(w_res_60[k][h].cpu().detach().numpy(),w_f_60[k][h].cpu().detach().numpy())
-                    ss.append(s)
-                ssss.append(ss)
-                cosdis3 = torch.tensor(sss)
-                # print('=========',cosdis3.shape)
-                cosdis4 = cosdis3.view(-1,9)
-
-
-
+#             ssss = []
+#             for k in range(len(w_res_60)): #取一张输入图 [9,6400]
+#                 # print('##########',w_res.shape,w_res[k].shape)
+#                 ss = []
+#                 for h in range(len(w_res_60[k])):  #取9个feature里的一个feature [1.6400]
+#                     # print('**********',w_res[k][h].shape)
+#                     s = cosine_similarity(w_res_60[k][h].cpu().detach().numpy(),w_f_60[k][h].cpu().detach().numpy())
+#                     ss.append(s)
+#                 ssss.append(ss)
+#                 cosdis3 = torch.tensor(sss)
+#                 # print('=========',cosdis3.shape)
+#                 cosdis4 = cosdis3.view(-1,9)
 
 
 
@@ -393,12 +383,10 @@ def train(num_epochs):
             #loss33 = mseloss(cosdis4, cos_lables).cuda()
 
 
-
             # total loss
             loss = los2 + 0.1*loss3 + 0.1+los1
 
-
-
+            
 
             torch.backends.cudnn.enabled = False
             loss.backward()
@@ -442,7 +430,7 @@ def train(num_epochs):
         train_acc = train_acc / len(train_set)
         train_loss = train_loss / len(train_set)
 
-        val_acc, val_auc,val_acc_org = val()
+        val_auc,val_acc= val()
 
         # save model
         if val_acc_org > best_acc:
@@ -454,8 +442,10 @@ def train(num_epochs):
 
         # print results
         print(
-            "Epoch {}, Train Accuracy: {} , TrainLoss: {} , Test Accuracy: {},Best Acc:{},Test AUC:{}, Best AUC:{},eq.acc:{}".format(
-                epoch, train_acc, train_loss, val_acc_org, best_acc, val_auc, best_auc,val_acc))
+            "Epoch {}, Train Accuracy: {} , TrainLoss: {} , Test Accuracy: {},Best Acc:{},Test AUC:{}, Best AUC:{}".format(
+                epoch, train_acc, train_loss, val_acc_org, best_acc, val_auc, best_auc))
+            
+           
 
 
 
