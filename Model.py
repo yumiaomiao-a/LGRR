@@ -1,41 +1,10 @@
-'''
-Code of 'Searching Central Difference Convolutional Networks for Face Anti-Spoofing'
-By Zitong Yu & Zhuo Su, 2019
-If you use the code, please cite:
-@inproceedings{yu2020searching,
-    title={Searching Central Difference Convolutional Networks for Face Anti-Spoofing},
-    author={Yu, Zitong and Zhao, Chenxu and Wang, Zezheng and Qin, Yunxiao and Su, Zhuo and Li, Xiaobai and Zhou, Feng and Zhao, Guoying},
-    booktitle= {CVPR},
-    year = {2020}
-}
-Only for research purpose, and commercial use is not allowed.
-MIT License
-Copyright (c) 2020
-'''
-
 import math
-
 import torch
 import torch.nn.functional as F
-import torch.utils.model_zoo as model_zoo
 from torch import nn
-from torch.nn import Parameter
-import pdb
 import numpy as np
-import random
-from multi_view_multi_scale import get_sobel,run_sobel,ERB
 
 
-
-########################   Centeral-difference (second order, with 9 parameters and a const theta for 3x3 kernel) 2D Convolution   ##############################
-## | a1 a2 a3 |   | w1 w2 w3 |
-## | a4 a5 a6 | * | w4 w5 w6 | --> output = \sum_{i=1}^{9}(ai * wi) - \sum_{i=1}^{9}wi * a5 --> Conv2d (k=3) - Conv2d (k=1)
-## | a7 a8 a9 |   | w7 w8 w9 |
-##
-##   --> output =
-## | a1 a2 a3 |   |  w1  w2  w3 |
-## | a4 a5 a6 | * |  w4  w5  w6 |  -  | a | * | w\_sum |     (kernel_size=1x1, padding=0)
-## | a7 a8 a9 |   |  w7  w8  w9 |
 
 class Conv2d_cd(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
@@ -61,13 +30,9 @@ class Conv2d_cd(nn.Module):
 
 
 
-
-
-
 class SpatialAttention(nn.Module):
     def __init__(self, kernel = 3):
         super(SpatialAttention, self).__init__()
-
 
         self.conv1 = nn.Conv2d(2, 1, kernel_size=kernel, padding=kernel//2, bias=False)
         self.sigmoid = nn.Sigmoid()
@@ -181,28 +146,24 @@ class CDCN(nn.Module):
         x = self.lastconv2(x)    # x [64, 32, 32]
         x = self.lastconv3(x)    # x [1, 32, 32]
 
-
-
         # map_x = x.squeeze(1)
         map_x = x.view(-1, 32*32*1)
         map_x = self.classifier(map_x)
 
         return map_x#, x_concat, x_Block1, x_Block2, x_Block3, x_input
 
-# CDCN = CDCN()
+
+  
 
 class CDCNpp(nn.Module):
 
     def __init__(self, basic_conv=Conv2d_cd, theta=0.7 ):
         super(CDCNpp, self).__init__()
 
-
         self.conv1 = nn.Sequential(
             basic_conv(3, 64, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(64),
-            nn.ReLU(),
-
-        )
+            nn.ReLU())
 
         self.Block1 = nn.Sequential(
             basic_conv(64, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -214,9 +175,7 @@ class CDCNpp(nn.Module):
             basic_conv(int(128*1.6), 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block2 = nn.Sequential(
             basic_conv(128, int(128*1.2), kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -231,9 +190,7 @@ class CDCNpp(nn.Module):
             basic_conv(int(128*1.4), 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block3 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -245,18 +202,16 @@ class CDCNpp(nn.Module):
             basic_conv(int(128*1.2), 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
-        # Original
+      
 
         self.lastconv1 = nn.Sequential(
             basic_conv(128*3, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             basic_conv(128, 1, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-            nn.ReLU(),
-        )
+            nn.ReLU())
 
 
         self.sa1 = SpatialAttention(kernel = 7)
@@ -272,6 +227,7 @@ class CDCNpp(nn.Module):
             torch.nn.Linear(100, 2))
 
 
+        
     def forward(self, x):	    	# x [3, 256, 256]
 
         x_input = x
@@ -308,10 +264,6 @@ class CDCNpp(nn.Module):
 
 
 
-
-
-
-
 class channel_wise_avgpool(nn.Module):
     def __init__(self, kernel_size=(1,2), stride=(1,2)):
         super(channel_wise_avgpool, self).__init__()
@@ -327,8 +279,6 @@ class channel_wise_avgpool(nn.Module):
         input = input.transpose(3,1).contiguous()
         print("final_cross",input.shape)
         return input
-
-
 
 
 
@@ -381,6 +331,7 @@ class interactive_attention_2(nn.Module):
         f11,f22 = torch.split(f4,[1,1],dim=1)
         return f11,f22
 
+    
 #define attention#################### 1th
 class interactive_attention_3(nn.Module):
     def __init__(self):
@@ -427,7 +378,7 @@ class interactive_attention_4(nn.Module):
         return f11,f22
 
 
-#将tensor分割成块
+#split tensor
 def window_partition(x,window_size):
     '''
     Args:
@@ -462,10 +413,7 @@ class decoder(nn.Module):
             nn.ReLU(),
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-
-        )
+            nn.ReLU())
 
         self.Block2 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -476,9 +424,7 @@ class decoder(nn.Module):
             nn.ReLU(),
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.ReLU())
 
         self.Block3 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -489,9 +435,7 @@ class decoder(nn.Module):
             nn.ReLU(),
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.ReLU())
 
         self.Block4 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -502,9 +446,7 @@ class decoder(nn.Module):
             nn.ReLU(),
             basic_conv(64, 3, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(3),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.ReLU())
 
     def forward(self, x):	    	# x [3, 256, 256]
 
@@ -519,6 +461,7 @@ class decoder(nn.Module):
         # print('++++==========',x4.shape)
         return x4
 
+    
 def conv1x1(in_planes, out_planes, stride=1, bias=False):
     "1x1 convolution"
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, padding=0, bias=bias)
@@ -539,10 +482,7 @@ class decoder_global(nn.Module):
             nn.ReLU(),
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
-
+            nn.ReLU())
 
         self.Block2 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -553,9 +493,7 @@ class decoder_global(nn.Module):
             nn.ReLU(),
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.ReLU())
 
         self.Block3 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -566,9 +504,7 @@ class decoder_global(nn.Module):
             nn.ReLU(),
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.ReLU())
 
         self.Block4 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -579,9 +515,7 @@ class decoder_global(nn.Module):
             nn.ReLU(),
             basic_conv(64, 3, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(3),
-            nn.ReLU(),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.ReLU())
 
         self.conv1x1_1 = conv1x1(128,128)
         self.conv1x1_2 = conv1x1(128,128)
@@ -619,11 +553,8 @@ class decoder_global(nn.Module):
         org4 = self.conv1x1_4(org4)
         org4 = F.interpolate(org4, size=x4.size()[2:],mode='bilinear', align_corners=True)
         x4 = torch.mul(x4,org4)
-
-
         # print('++++==========',x4.shape)
         return x4
-
 
 
 
@@ -651,31 +582,6 @@ class SAM(nn.Module):
         out = torch.mul(x, atten)
         out = F.relu(self.bn(self.conv(out)), inplace=True)
         return out
-
-
-# class SAM_new(nn.Module):
-#     def __init__(self, in_chan, out_chan):
-#         super(SAM_new, self).__init__()
-#         # self.conv_atten = conv3x3(2, 1)
-#         # self.conv = conv3x3(in_chan, out_chan)
-#         # self.bn = nn.BatchNorm2d(out_chan)
-#
-#         self.conv1 = nn.Conv2d(in_chan,out_chan,kernel_size=3,stride=1,padding=1)
-#         self.conv2 = nn.Sequential(
-#             nn.BatchNorm2d(in_chan),
-#             nn.ReLU(),
-#             nn.Conv2d(in_chan,3,kernel_size=3,stride=1,padding=1))
-#         self.conv3 = nn.Sequential(
-#             nn.Conv2d(in_chan,1,kernel_size=3,stride=1,padding=1),
-#             nn.Sigmoid())
-#     def forward(self, x):
-#         # x_input = x
-#         x1 = self.conv1(x)
-#         x2 = self.conv2(x)
-#         x2 = torch.add(x2,x)
-#         x3 = self.conv3(x2)
-#         out = x1.mul(x3)
-#         return out
 
 
 
@@ -763,16 +669,13 @@ class CDCN_my(nn.Module):
         self.decoder_global = decoder_global
         self.FAD_Head = FAD_Head(self.shape[-1])#生成frequency
         self.sam = SAM(3,64)
-        # self.sam_new = SAM_new(3,64)
         self.sam0 = SAM(3,64)
-        # self.channel_wise_avgpool = channel_wise_avgpool
+      
 
         self.conv1 = nn.Sequential(
             basic_conv(3, 64, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(64),
-            nn.ReLU()
-            # nn.Sigmoid()
-        )
+            nn.ReLU())
 
         self.conv1_new = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
@@ -824,23 +727,19 @@ class CDCN_my(nn.Module):
         self.conv2 = nn.Sequential(
             basic_conv(3, 64, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(64),
-            nn.ReLU()
-        )
+            nn.ReLU() )
 
         self.conv11 = nn.Sequential(
             basic_conv(12, 3, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(3),
-            nn.ReLU()
-            # nn.Sigmoid()
-        )
+            nn.ReLU())
 
         self.sigmoid = nn.Sigmoid()
 
         self.conv22 = nn.Sequential(
             basic_conv(12, 64, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(64),
-            nn.ReLU()
-        )
+            nn.ReLU())
 
 
         self.Block1 = nn.Sequential(
@@ -865,8 +764,7 @@ class CDCN_my(nn.Module):
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block3 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -878,8 +776,7 @@ class CDCN_my(nn.Module):
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block4 = nn.Sequential(
             basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -891,8 +788,7 @@ class CDCN_my(nn.Module):
             basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
 
         self.Block11 = nn.Sequential(
@@ -907,8 +803,7 @@ class CDCN_my(nn.Module):
             nn.Conv2d(196,128,kernel_size=3,stride=1,padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block22 = nn.Sequential(
             # basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -923,8 +818,7 @@ class CDCN_my(nn.Module):
             nn.Conv2d(196,128,kernel_size=3,stride=1,padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block33 = nn.Sequential(
             # basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -939,8 +833,7 @@ class CDCN_my(nn.Module):
             nn.Conv2d(196,128,kernel_size=3,stride=1,padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.Block44 = nn.Sequential(
             # basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
@@ -955,65 +848,7 @@ class CDCN_my(nn.Module):
             nn.Conv2d(196,128,kernel_size=3,stride=1,padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
-
-
-        # self.Block1_vgg = nn.Sequential(
-        #     nn.Conv2d(64,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.Conv2d(128,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
-        #
-        # self.Block2_vgg = nn.Sequential(
-        #     nn.Conv2d(128,256,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(256),
-        #     nn.ReLU(),
-        #     nn.Conv2d(256,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
-        #
-        # self.Block3_vgg = nn.Sequential(
-        #     nn.Conv2d(128,512,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(512),
-        #     nn.ReLU(),
-        #     nn.Conv2d(512,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
-        #
-        # self.Block4_vgg = nn.Sequential(
-        #     nn.Conv2d(128,512,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(512),
-        #     nn.ReLU(),
-        #     nn.Conv2d(512,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
-
-
-        # self.Block5 = nn.Sequential(
-        #     # basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     nn.Conv2d(256,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        #     # basic_conv(128, 196, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     nn.Conv2d(128,196,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(196),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        #     # basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     nn.Conv2d(196,128,kernel_size=3,stride=1,padding=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        # )
-
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
 
         self.lastconv1 = nn.Sequential(
@@ -1067,20 +902,15 @@ class CDCN_my(nn.Module):
             nn.Sigmoid())
 
 
-
-
         self.last = nn.Sequential(
             nn.Conv2d(128,256,kernel_size=3,stride=1,padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        )
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
 
 
         self.upsample = nn.Upsample(size=(15, 15), mode='bilinear',align_corners=True)
-
-
 
 
         self.AVP = nn.Sequential(nn.AdaptiveAvgPool2d(1))
@@ -1093,7 +923,6 @@ class CDCN_my(nn.Module):
         self.gap_5 = nn.AdaptiveAvgPool2d(5)
 
 
-
         self.interactive_attention_1 = interactive_attention_1()
         self.interactive_attention_2 = interactive_attention_2()
         self.interactive_attention_3 = interactive_attention_3()
@@ -1103,24 +932,18 @@ class CDCN_my(nn.Module):
             torch.nn.Linear(256*8*8, 300),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.5),
-            torch.nn.Linear(300, 2)
-        )
+            torch.nn.Linear(300, 2))
 
         self.c11 = torch.nn.Sequential(
             torch.nn.Linear(3200, 300),
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.5),
             torch.nn.Linear(300, 2),
-            torch.nn.Sigmoid()
-        )
+            torch.nn.Sigmoid())
 
         self.c22= torch.nn.Sequential(
-            torch.nn.Linear(75, 2),
-            # torch.nn.ReLU(),
-            # torch.nn.Dropout(p=0.5),
-            # torch.nn.Linear(10, 2)
-            torch.nn.Sigmoid()
-        )
+            torch.nn.Linear(75, 2), 
+            torch.nn.Sigmoid())
 
 
         self.c33 = torch.nn.Sequential(
@@ -1128,30 +951,8 @@ class CDCN_my(nn.Module):
             torch.nn.ReLU(),
             torch.nn.Dropout(p=0.5),
             torch.nn.Linear(100, 2),
-            torch.nn.Sigmoid()
-        )
+            torch.nn.Sigmoid())
 
-        # self.classi = torch.nn.Sequential(
-        #     torch.nn.Linear(1*1*256, 2),
-        #     torch.nn.Sigmoid()
-        # )
-
-        # self.c_3= torch.nn.Sequential(
-        #     torch.nn.Linear(300, 2))
-        #
-        # self.c_2= torch.nn.Sequential(
-        #     torch.nn.Linear(1200, 100),
-        #     torch.nn.ReLU(),
-        #     torch.nn.Dropout(p=0.5),
-        #     torch.nn.Linear(100, 2)
-        # )
-
-        # self.c_1= torch.nn.Sequential(
-        #     torch.nn.Linear(4800, 500),
-        #     torch.nn.ReLU(),
-        #     torch.nn.Dropout(p=0.5),
-        #     torch.nn.Linear(500, 2)
-        # )
 
         self.c44 = torch.nn.Sequential(
             torch.nn.Linear(675, 100),
@@ -1163,110 +964,40 @@ class CDCN_my(nn.Module):
         self.sigmoid = torch.nn.Sigmoid()
 
         self.concat = torch.nn.Sequential(
-            torch.nn.Linear(224, 2)
-        )
+            torch.nn.Linear(224, 2))
 
         self.conv1_1 = nn.Sequential(
             nn.Conv2d(128,32,kernel_size=1,stride=1,padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU()
-        )
+            nn.ReLU())
 
         self.conv1_2 = nn.Sequential(
             nn.Conv2d(128,32,kernel_size=1,stride=1,padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU()
-        )
+            nn.ReLU())
 
         self.conv1_3 = nn.Sequential(
             nn.Conv2d(128,32,kernel_size=1,stride=1,padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU()
-        )
+            nn.ReLU())
 
         self.conv1_4 = nn.Sequential(
             nn.Conv2d(224,224,kernel_size=1,stride=1,padding=1),
             nn.BatchNorm2d(224),
-            nn.ReLU()
-        )
+            nn.ReLU())
 
-        # self.sobel_x1, self.sobel_y1 = get_sobel(3, 1)
-        # self.erb_db_1 = ERB(3, 64)
+
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-
-        # self.upsample30 = nn.Upsample(size=(30, 30), mode='bilinear',align_corners=True)
-        # self.upsample60 = nn.Upsample(size=(60, 60), mode='bilinear',align_corners=True)
-        # self.upsample120 = nn.Upsample(size=(120, 120), mode='bilinear',align_corners=True)
-        # #
-        # self.Block1_cp = nn.Sequential(
-        #     basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     # basic_conv(128, 196, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     # nn.BatchNorm2d(196),
-        #     # nn.ReLU(),
-        #     # basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     # nn.BatchNorm2d(128),
-        #     # nn.ReLU()
-        #     )
-        #
-        # self.Block2_cp = nn.Sequential(
-        #     basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     # basic_conv(128, 196, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     # nn.BatchNorm2d(196),
-        #     # nn.ReLU(),
-        #     # basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     # nn.BatchNorm2d(128),
-        #     # nn.ReLU()
-        # )
-        #
-        # self.Block3_cp = nn.Sequential(
-        #     basic_conv(128, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(),
-        #     # basic_conv(128, 196, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     # nn.BatchNorm2d(196),
-        #     # nn.ReLU(),
-        #     # basic_conv(196, 128, kernel_size=3, stride=1, padding=1, bias=False, theta= theta),
-        #     # nn.BatchNorm2d(128),
-        #     # nn.ReLU(),
-        # )
-        #
-        # self.lastconv5 = nn.Sequential(
-        #     nn.Conv2d(128, 3, kernel_size=3, stride=1, padding=1),
-        #     nn.BatchNorm2d(3),
-        #     nn.ReLU())
-
-        # self.conv77 = nn.Sequential(
-        #     nn.Conv2d(3,64,kernel_size=7,stride=1,padding=3),
-        #     nn.BatchNorm2d(64),
-        #     nn.ReLU())
-        #
-        # self.conv111 = nn.Sequential(
-        #     nn.Conv2d(64,1,kernel_size=1,stride=1,padding=0),
-        #     nn.BatchNorm2d(1),
-        #     nn.Sigmoid())
-
-        # self.c_cls= torch.nn.Sequential(
-        #     torch.nn.Linear(15*15*3, 2),
-        #     torch.nn.Sigmoid())
-
 
 
 
     def forward(self, x):	    	# x [3, 256, 256]
 
         ####################################original
-        #residual　　原来的
+        #residual　
         x_input = x
-        # x = self.conv1(x)
-        # x_ = self.AVP(x)
-        # x_res = x-x_
 
-
-        ######residual 改成multi-scale residual试试
+        ###### multi-scale residual module
         x = self.conv1_new(x) #240*240*64
         m1,m2,m3,m4 = torch.split(x,[16,16,16,16],dim=1)
         m11 = self.Res_conv1(m1)
@@ -1283,7 +1014,7 @@ class CDCN_my(nn.Module):
 
 
 
-        ################### frequency/SAM ATTENTION原来的
+        ################### SAM ATTENTION
         x_org_f = x_input
         x_org_f = self.sam(x_org_f)
         # x_org_f = self.conv77(x_org_f)
@@ -1294,36 +1025,6 @@ class CDCN_my(nn.Module):
         # x_org_f_att = channel_wise_avgpool(x_org_f)
         # print('---------',x_org_f_att.shape)
 
-
-
-
-    # x_org_f = self.erb_db_1(run_sobel(self.sobel_x1, self.sobel_y1, x_input))
-        # x_org_ff = run_sobel(self.sobel_x1, self.sobel_y1, x_input)
-        # print('=========',x_org_ff.shape,x_org_f.shape)
-        # x_org_f = x_org_ff.mul(x_org_f)
-
-
-        ##########################################changes
-        # xx1 = x1
-        # x1 = self.conv1(x1)
-        # x1_ = self.AVP(x1)
-        # x_res = x1-x1_
-        #
-        # xx2 = x2
-        # x2 = self.conv2(x2)
-        # x2_ = self.AVP(x2)
-        # x_org_f = x2-x2_
-        #
-        # x_res = x_input
-        # x_org_f = x_input
-
-
-        # x_org_f = self.FAD_Head(x_org_f) # frequency: 12, 224, 224
-        # x_org_f = self.conv11(x_org_f)
-        # x_org_f_ = self.avgpool(x_org_f)
-        # x_org_f_ = x_org_f-x_org_f_
-        # x_org_f_ = self.sigmoid(x_org_f_)
-        # x_org_f = x_org_f_
 
 
 
@@ -1486,36 +1187,6 @@ class CDCN_my(nn.Module):
         # w_f_c = self.sigmoid(w_f_c)
 
 
-        # aa,bb,ccc,dd = x.shape
-        # w_res_c3 = window_partition(x_construct_30,10) #图像分块，窗口size=5
-        # w_res_c3 = w_res_c3.view(aa,9,-1)[:,[4],:]
-        # w_res_c3 = w_res_c3.view(aa,-1)
-        # w_res_c3 = self.c_3(w_res_c3)
-        #
-        # w_res_c2 = window_partition(x_construct_60,20) #图像分块，窗口size=5
-        # w_res_c2 = w_res_c2.view(aa,9,-1)[:,[4],:]
-        # w_res_c2 = w_res_c2.view(aa,-1)
-        # w_res_c2 = self.c_2(w_res_c2)
-        #
-        # w_res_c1 = window_partition(x_construct_120,40) #图像分块，窗口size=5
-        # w_res_c1 = w_res_c1.view(aa,9,-1)[:,[4],:]
-        # w_res_c1 = w_res_c1.view(aa,-1)
-        # w_res_c1 = self.c_1(w_res_c1)
-
-
-        # aa,bb,ccc,dd = x.shape
-        # x_res_9_c = window_partition(x_res_9,40) #图像分块，窗口size=5
-        # x_res_9_c = x_res_9_c.view(aa,9,-1)[:,[4],:]
-        # x_res_9_c = x_res_9_c.view(aa,-1)
-        # x_res_9_c = self.c3(x_res_9_c)
-
-
-
-        # x_concat = torch.cat((x_Block1_up,x_Block2_up,x_Block3_up,x_Block4_up), dim=1)    # x [128*3, 32, 32]
-
-        #######这里是用128*30*30的features进行重建，得到3*30*30
-        # x_construct_240 = self.lastconv3(x_res_3)
-        # x_construct_240_down = self.lastconv33(x_f_3)
 
         ######用中间的特征聚合做分类
         # # concat2 = torch.cat((x_res_2,x_f_2), dim=1)
@@ -1576,61 +1247,11 @@ class CDCN_my(nn.Module):
         x_Block33 = x_f_3
         x_Block44 = x_f_4
 
-        # print('**********',x_construct_30)
-        # print('**********',type(concat_c),type(w_res_c))
-        # return x_res_4,x_f_4,w_res_c,w_f_c,x_construct_240,x_res,x_Block1,x_Block2,x_Block3,x_Block4,x_org_f,x_Block11,x_Block22,x_Block33,x_Block44
-
-
-
-        '''
-        x1 = self.Block1(x)
-        x2 = self.Block2(x1)
-        x3 = self.Block3(x2)
-        x4 = self.Block4(x3)
-        x_res_4 = x4
-        xx1 = self.Block1(x_org_f)
-        xx2 = self.Block2(xx1)
-        xx3 = self.Block3(xx2)
-        xx4 = self.Block4(xx3)
-        x_f_4 = xx4
-
-
-        aa,bb,ccc,dd = x.shape
-        w_res_c = window_partition(x_res_4,5) #图像分块，窗口size=5
-        w_f_c = window_partition(x_f_4,5) #图像分块，窗口size=5
-        # print('_________',w_res_c.shape)
-        w_res_c = w_res_c.view(aa,9,-1)[:,[4],:]
-        w_f_c = w_f_c.view(aa,9,-1)[:,[4],:]
-        # print('————_________',w_res_c.shape)
-        w_res_c = w_res_c.view(aa,-1)
-        w_f_c = w_f_c.view(aa,-1)
-        # print('%%%_________',w_res_c.shape)
-        a,b = w_res_c.shape
-        # # print('____________',x.shape,y.shape,x_res_4.shape,x_org_f_4.shape,x_construct.shape,w_res_c.shape)
-        w_res_c = self.c11(w_res_c)
-        w_f_c = self.c11(w_f_c)
-        return w_res_c,w_f_c
-        '''
-        # print('---------',x_res_9)
+       
+ 
         return x_consis,x_,w_res_c,w_f_c,w_res_c4,w_f_c4,x_res_4,x_f_4,x_construct_30,x_construct_120,x_construct_60,x_construct_15,y_construct_30,y_construct_120,y_construct_60,y_construct_15,x_res,x_Block1,x_Block2,x_Block3,x_Block4,x_org_f,x_Block11,x_Block22,x_Block33,x_Block44
-
-
-
-
-class fc(nn.Module):
-    def __init__(self):
-        super(fc, self).__init__()
-        self.c1 = torch.nn.Sequential(
-            torch.nn.Linear(9, 2)
-        )
-
-    def forward(self, x):
-        c = self.c1(x)
-        return c
-
-
 
 
 CDCNpp = CDCNpp()
 CDCN_my = CDCN_my()
-fc = fc()
+
