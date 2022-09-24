@@ -223,111 +223,45 @@ def train(num_epochs):
         for i, (images, labels) in enumerate(train_dataloader):
 
             i+=1
-            # images = images.to(device3)
-            # labels = labels.to(device3)
+            
             images = images.cuda()
             labels = labels.cuda()
-
-            # 清除所有累积梯度
+            
             optimizer.zero_grad()
 
            
 
-
-
-
-
-            ##########################生成二进制标签
-
-            binary_label=[]
-            binary_label_x4=[]
-            binary_label_x5=[]
-            binary_label_x3=[]
-            binary_label_x6=[]
-
-
+            ########################## create binary label 
+            binary_label=[] 
             for j in range(len(images)):
-
-                if labels[j]==1:
-                    # l = reallabel_new(images[j])
+                if labels[j]==1: 
                     l = reallabel_new()
-                    q = reallabel_new_30()
-                    q120 = reallabel_new_120()
-                    q60 = reallabel_new_60()
-                    q15 = reallabel_new_15()
-
-                    # l = l.numpy()
-                    # l1 = np.transpose(l,(1,2,0))
-                    # plt.imshow(l1)
-                    # plt.savefig('./22222.jpg')
-                    # print("——————————————————————",type(l))
-                    # print("——————————————————————",q)
-                    binary_label.append(l)
-                    binary_label_x4.append(q)
-                    binary_label_x3.append(q120)
-                    binary_label_x5.append(q60)
-                    binary_label_x6.append(q15)
-
-
+                    binary_label.append(l) 
                 else:
-                    # l = fakelabel_new(images[j])
+                    
                     l = fakelabel_new()
-                    # d = np.resize(l,(64,120,120))
-                    # q = np.resize(l,(3,30,30))
-                    # l1 = np.transpose(l,(1,2,0))
-                    # plt.imshow(l1)
-                    # plt.savefig('./44444.jpg')
-                    q = fakelabel_new_30()
-                    q120 = fakelabel_new_120()
-                    q60 = fakelabel_new_60()
-                    q15 = fakelabel_new_15()
-
-                    # l = region_label(images[j])
                     binary_label.append(l)
-                    # binary_label_x3_new.append(d)
-                    binary_label_x4.append(q)
-                    binary_label_x3.append(q120)
-                    binary_label_x5.append(q60)
-                    binary_label_x6.append(q15)
-
-
-
 
             binary_label = torch.tensor(binary_label)
-            binary_label_x4 = torch.tensor(binary_label_x4).cuda()
-            binary_label_x3 = torch.tensor(binary_label_x3).cuda()
-            binary_label_x5 = torch.tensor(binary_label_x5).cuda()
-            binary_label_x6 = torch.tensor(binary_label_x6).cuda()
-
-
-
-
-            ###########train network torch.Size([32, 128, 15, 15]) torch.Size([32, 128, 15, 15]) torch.Size([32, 3, 240, 240]) torch.Size([32, 2]) torch.Size([32, 3, 240, 240]) torch.Size([32, 3, 240, 240])
-            # x_res_4,x_f_4,w_res_c,w_f_c,x_construct_240,x_res,x_Block1,x_Block2,x_Block3,x_Block4,x_org_f,x_Block11,x_Block22,x_Block33,x_Block44 = model(images)
-            # print('_________',x_res_4.shape,x_f_4.shape,x_construct_240.shape)
+           
             x_consis,x_,w_res_c,w_f_c,w_res_c4,w_f_c4,x_res_4,x_f_4,x_construct_30,x_construct_120,x_construct_60,x_construct_15,y_construct_30,y_construct_120,y_construct_60,y_construct_15,x_res,x_Block1,x_Block2,x_Block3,x_Block4,x_org_f,x_Block11,x_Block22,x_Block33,x_Block44= model(images)
 
+            w_res = window_partition(x_res_4,5) # window size=5
+            w_f = window_partition(x_f_4,5) # window size=5
+            w_binary_label = window_partition(binary_label,80) # window size=80
 
+            w_res_patch = window_partition(x_res_4,15) # window size=15
+            w_f_patch = window_partition(x_f_4,15) # window size=15
+            
 
-            w_res = window_partition(x_res_4,5) #图像分块，窗口size=5
-            w_f = window_partition(x_f_4,5)
-            w_binary_label = window_partition(binary_label,80)
-
-            w_res_patch = window_partition(x_res_4,15) #图像分块，窗口size=5
-            w_f_patch = window_partition(x_f_4,15)
-            w_res_patch = w_res_patch.view(-1,28800)
-            w_f_patch = w_f_patch.view(-1,28800)
-
-            # print('---------',w_res_patch.shape)
-
-            # print('----------',x_construct_60.shape)
-            w_res_60 = window_partition(x_Block2,20) #图像分块，窗口size=5
-            w_f_60 = window_partition(x_Block22,20)
+           
+            w_res_60 = window_partition(x_Block2,20) # window size=20
+            w_f_60 = window_partition(x_Block22,20) # window size=20
             # print('----------',w_res.shape,w_res_60.shape)
-            # x1 = torch.chunk(x_res_4,9,dim=1)
+            
 
 
-            #######计算w_res内部的cosine distance
+            ####### computer w_res inter cosine distance
             kkk=[]
             for m in range(len(w_res)):
                 kk=[]
@@ -345,7 +279,7 @@ def train(num_epochs):
             res_cosdis = res_cosdis.cuda()
 
 
-            #######计算w_f内部的cosine distance
+            ####### computer w_f inter cosine distance
             lll=[]
             for m in range(len(w_f)):
                 ll=[]
