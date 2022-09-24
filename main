@@ -297,7 +297,7 @@ def train(num_epochs):
             # f_cosdis = f_cosdis.to(device3)
 
 
-            ##########计算binary_label中每个batch probably fakerate
+            ########## computer each patch probably fakerate in binary_label
             # print('$$$$$$$^^^^^^^^^^',a.shape)
             ddd=[]
             for m in range(len(w_binary_label)):
@@ -329,15 +329,11 @@ def train(num_epochs):
                 # print('%%%%$$$$$%%%%%%%',ddd)
 
             dislabels = torch.tensor(ddd)
-            # print('$$$$$$$^^^^^^^^^^',dislabels.shape)
-            # print('%%%%%%%',dislabels.shape)
             dislabels = dislabels.view(-1,81).cuda()
-            # print('%%%%%%%',dislabels.shape)
+           
 
 
-
-
-            #计算两个图像的各个块的余弦距离，[0,1]之间,    应该出来9个数，[32,9],label==1
+            #计算两个图像的各个块的余弦距离，[0,1]之间, 9个数，[32,9],label==1
             sss = []
             for k in range(len(w_res)): #取一张输入图 [9,6400]
                 # print('##########',w_res.shape,w_res[k].shape)
@@ -370,8 +366,6 @@ def train(num_epochs):
                 for h in range(len(w_res_60[k])):  #取9个feature里的一个feature [1.6400]
                     # print('**********',w_res[k][h].shape)
                     s = cosine_similarity(w_res_60[k][h].cpu().detach().numpy(),w_f_60[k][h].cpu().detach().numpy())
-                    # print(s)
-                    # ss = (ss+1)/2
                     ss.append(s)
                 ssss.append(ss)
                 cosdis3 = torch.tensor(sss)
@@ -381,39 +375,20 @@ def train(num_epochs):
 
 
 
-            ######define loss items
-            # print('_____________',x_construct_240.shape)
-            # print('+++++++_____________',binary_label_x4.shape)
 
 
-            # loss1 = l1loss(x_construct_30, binary_label_x4).cuda()
-            # loss11 = l1loss(x_construct_120, binary_label_x3).cuda()
-            # loss111 = l1loss(x_construct_60, binary_label_x5).cuda()
-            # loss111 = l1loss(x_construct_15, binary_label_x6).cuda()
-            # print('--------',x_consis.shape)
-            loss1111 = ConsistencyCos(x_consis).cuda()
-            # los1 = l1loss(y_construct_30, binary_label_x4).cuda()
-            # los11 = l1loss(y_construct_120, binary_label_x3).cuda()
-            # los111 = l1loss(y_construct_60, binary_label_x5).cuda()
-            # los1111 = l1loss(y_construct_15, binary_label_x6).cuda()
-            # loss1111 = mseloss(x_construct_15,y_construct_15).cuda()
-            los1 = loss1111
+            ######################### define loss items
+           
+            los1 = ConsistencyCos(x_consis).cuda()
+
+        
 
             loss22 = loss_f(w_f_c4,labels).cuda()
             loss2 = loss_f(w_res_c4, labels).cuda()
-            # loss222 = loss_f(cls, labels).cuda()
-            # loss2222 = loss_f(y_construct_15, binary_label_x6).cuda()
             los2 = loss22+loss2
 
 
-            # print('________--',type(concat_c),labels)
-            # print('++________--',type(w_res_c),labels)
-
-            # loss22 = loss_f(concat_c,labels)
-            # loss222 = loss_f(c_top, labels).cuda()
-            # print('kkk________--',loss22)
-            # print('lll________--',loss2)
-
+           
 
 
 
@@ -423,17 +398,14 @@ def train(num_epochs):
             cosdis4 = cosdis4.cuda()
 
 
-            loss4 = mseloss(cosdis2, cos_lables).cuda()
-            loss44 = mseloss(cosdis4, cos_lables).cuda()
+            loss3 = mseloss(cosdis2, cos_lables).cuda()
+            loss33 = mseloss(cosdis4, cos_lables).cuda()
 
 
 
             # intra-patch 损失
-            # loss5 = mseloss(res_cosdis, dislabels).cuda()
-
-            # print('=========',type(los2),type(los1),type(loss4))
-            # loss = 0.1*loss1+loss2+loss22+0.1*(loss4+loss5)
-            loss = los2 + 10*loss4 + 0.1+los1
+            
+            loss = los2 + 0.1*loss3 + 0.1+los1
 
 
             # print('_________',loss)
