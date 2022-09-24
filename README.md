@@ -3,7 +3,7 @@
 ## Introduction:  
 This is the official repository of "LGRR: Local and Global Relation Representation for Face Forgery Detection". 
 
-Although existing works achieve impressive performance in the intra-domain scenario,
+Although existing DeepFake detection works achieve impressive performance in the intra-domain scenario,
 they are weak in learning robust and generalizable feature
 representations and fail in coping with unseen domains. To
 mitigate this issue, we propose a multi-view dual-branch face
