@@ -3,13 +3,8 @@ import numpy
 import torch
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
-import torchvision
-from torch.autograd import Variable
 from torchvision import datasets, transforms
-import numpy as np
 import os           
-import matplotlib.pyplot as plt
-import time
 import torch.nn as nn
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 from PIL import ImageFile
@@ -20,14 +15,10 @@ from regionlabel import region_label,fakelabel_new,reallabel_new,fakelabel_new_3
 import matplotlib.pyplot as plt
 from regionlabel import reallabel_new_120,reallabel_new_60,fakelabel_new_120,fakelabel_new_60,reallabel_new_15,fakelabel_new_15
 from sklearn import metrics
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from data_augmentation import face_eraser_gray,bg_eraser_gray,face_eraser_shuffle,bg_eraser_shuffle,face_eraser_change,bg_eraser_change
 from FeatureMap2Heatmap import featuremap2heatmap
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 
 
 # read data
@@ -45,7 +36,7 @@ data_transform = {
         # transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225]),
         # transforms.RandomErasing(p=0.5,scale=(0.02,0.33),ratio=(0.3,0.3),value=0,inplace=False)
     ]),
-    'test':transforms.Compose([
+    'val':transforms.Compose([
         transforms.Scale([240,240]),
         transforms.ToTensor(),
         # transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225])
