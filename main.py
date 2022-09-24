@@ -71,7 +71,7 @@ val_dataloader = dataloader ['val']
 dataset_size = {x:len(image_datasets[x]) for x in ['train','val']}
 
 
-from CDCN_model import CDCN_my
+from Model import CDCN_my
 model = CDCN_my
 
 
