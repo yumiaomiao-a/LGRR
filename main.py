@@ -297,7 +297,7 @@ def train(num_epochs):
             # f_cosdis = f_cosdis.to(device3)
 
 
-            ########## computer each patch probably fakerate in binary_label
+            ########## computer each patch probably fake rate in binary_label
             # print('$$$$$$$^^^^^^^^^^',a.shape)
             ddd=[]
             for m in range(len(w_binary_label)):
@@ -349,7 +349,6 @@ def train(num_epochs):
                 # print('!!!!!!!!',cosdis1)
                 cosdis2 = cosdis1.view(-1,9)
 
-
             dim = 9
             batchsize,z,zz,zzz=images.shape
             cos_lables = torch.ones(batchsize,dim)  #两个矩阵对应元素的余弦距离应该接近1，所以label应该都是1
@@ -378,68 +377,50 @@ def train(num_epochs):
 
 
             ######################### define loss items
-           
+            # GSM loss
             los1 = ConsistencyCos(x_consis).cuda()
-
-        
-
+            
+            # classification loss
             loss22 = loss_f(w_f_c4,labels).cuda()
             loss2 = loss_f(w_res_c4, labels).cuda()
             los2 = loss22+loss2
 
 
-           
-
-
-
-            #inter-patch 块间损失
-            # print('_______________',cosdis4.shape, cos_lables.shape)
+            #IPSM loss
             cosdis2 = cosdis2.cuda()
-            cosdis4 = cosdis4.cuda()
-
-
+            #cosdis4 = cosdis4.cuda()
             loss3 = mseloss(cosdis2, cos_lables).cuda()
-            loss33 = mseloss(cosdis4, cos_lables).cuda()
+            #loss33 = mseloss(cosdis4, cos_lables).cuda()
 
 
 
-            # intra-patch 损失
-            
+            # total loss
             loss = los2 + 0.1*loss3 + 0.1+los1
 
 
-            # print('_________',loss)
-            # print('_________',torch.cuda.is_available())
 
 
             torch.backends.cudnn.enabled = False
-            # 传播损失
             loss.backward()
 
 
-
-            # 根据计算的梯度调整参数
             optimizer.step()
             # scheduler.step()
 
             train_loss += loss.cpu().item() * images.size(0)
             # _, prediction = torch.max(outputs.data, 1)
 
-            # w_res_c = w_f_c#+w_f_c#+w_res_c2+w_f_c2
+            # LGRR-P
             w_res_c = w_f_c4 + w_res_c4
             # print('------------------',w_f_c)
             # print('==================',w_res_c)
 
             _, prediction = torch.max(w_res_c.data, 1)
-            # _, prediction2 = torch.max(w_res_c.data, 1)
-            # _, prediction3 = torch.max(c_top.data, 1)
-
-            # prediction = prediction1 + prediction2 + prediction3
-            # prediction = torch.where(prediction >= 2, 1, 0)
-
+           
 
             train_acc += torch.sum(prediction == labels.data)
 
+            
             batch_size,m,mm,mmm = images.shape
 
             if i% 5 == 0:
@@ -448,40 +429,36 @@ def train(num_epochs):
 
                 print('Epoch[{}] batch[{}],Loss:{:.4f},Acc:{:.4f}'.format( epoch, i, batch_loss, batch_acc))
 
+            # visualization every 500 step
             if i% 500 == 0:
-                # visualization
                 featuremap2heatmap(images, x_res,x_org_f,x_Block1, x_Block2, x_Block3, x_Block4,x_Block11, x_Block22, x_Block33, x_Block44)
-                # FeatureMap2Heatmap(images, x_Block11, x_Block22, x_Block33, x_Block44, x_construct_240)
-
 
             torch.cuda.empty_cache()
 
-        # 调用学习率调整函数
+        # adjust learning rate
         adjust_learning_rate(epoch)
 
-        # 计算模型在50000张训练图像上的准确率和损失值
+        # compute train acc and loss
         train_acc = train_acc / len(train_set)
         train_loss = train_loss / len(train_set)
 
-        test_acc, test_auc,test_acc_org = test()
+        val_acc, val_auc,val_acc_org = val()
 
-        # 若测试准确率高于当前最高准确率，则保存模型
-        if test_acc_org > best_acc:
+        # save model
+        if val_acc_org > best_acc:
             save_models(epoch)
-            best_acc = test_acc_org
+            best_acc = val_acc_org
 
-        if test_auc > best_auc:
-            best_auc = test_auc
+        if val_auc > best_auc:
+            best_auc = val_auc
 
-        # 打印度量
+        # print results
         print(
             "Epoch {}, Train Accuracy: {} , TrainLoss: {} , Test Accuracy: {},Best Acc:{},Test AUC:{}, Best AUC:{},eq.acc:{}".format(
-                epoch, train_acc, train_loss, test_acc_org, best_acc, test_auc, best_auc,test_acc))
-
-
+                epoch, train_acc, train_loss, val_acc_org, best_acc, val_auc, best_auc,val_acc))
 
 
 
 if __name__ == '__main__':
-    train(60)
-    # test()
+    train(20)
+   
