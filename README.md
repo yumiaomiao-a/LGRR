@@ -28,3 +28,17 @@ This repository is currently under maintenance, if you are experiencing any prob
 ## Download
 - git clone https://github.com/yumiaomiao-a/LGRR.git
 - cd LGRR
+
+ 
+## Prerequisites:  
+We recommend using the Anaconda to manage the environment.  
+- conda create -n lgrr python=3.6  
+- conda activate lgrr  
+- conda install -c pytorch pytorch=1.7.1 torchvision=0.5.0  
+
+
+## Dataset Preparation
+You need to download the publicly available face forensics datasets. In this work, we conduct experiments on DeepfakeTIMIT, Celeb-DF and FaceForensics++, their official download links are as follows:
+- https://www.idiap.ch/en/dataset/deepfaketimit
+- https://github.com/yuezunli/celeb-deepfakeforensics
+- https://github.com/ondyari/FaceForensics
