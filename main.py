@@ -342,20 +342,6 @@ def train(num_epochs):
 
 
 
-#             ssss = []
-#             for k in range(len(w_res_60)): #取一张输入图 [9,6400]
-#                 # print('##########',w_res.shape,w_res[k].shape)
-#                 ss = []
-#                 for h in range(len(w_res_60[k])):  #取9个feature里的一个feature [1.6400]
-#                     # print('**********',w_res[k][h].shape)
-#                     s = cosine_similarity(w_res_60[k][h].cpu().detach().numpy(),w_f_60[k][h].cpu().detach().numpy())
-#                     ss.append(s)
-#                 ssss.append(ss)
-#                 cosdis3 = torch.tensor(sss)
-#                 # print('=========',cosdis3.shape)
-#                 cosdis4 = cosdis3.view(-1,9)
-
-
 
             ######################### define loss items
             # GSM loss
