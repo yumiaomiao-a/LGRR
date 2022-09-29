@@ -1,7 +1,7 @@
 # LGRR: Local and Global Relation Representation for Face Forgery Detection
 
 ## Introduction:  
-This is the official repository of "LGRR: Local and Global Relation Representation for Face Forgery Detection". 
+This is the official repository of the article "LGRR: Local and Global Relation Representation for Face Forgery Detection". 
 
 Although existing DeepFake detection works achieve impressive performance in the intra-domain scenario,
 they are weak in learning robust and generalizable feature
