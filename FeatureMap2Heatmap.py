@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import torch
 
-########### 
+###########
 def featuremap2heatmap(x, x_res,x_org_f,feature1, feature2, feature3,feature4,feature11, feature22, feature33,feature44):
     ## initial images
-    feature_first_frame = x[0,:,:,:].cpu()    ## the middle frame
+    feature_first_frame = x[0,:,:,:].cpu()    ## choose the middle frame
     heatmap = torch.zeros(feature_first_frame.size(1), feature_first_frame.size(2))
     for i in range(feature_first_frame.size(0)):
         heatmap += torch.pow(feature_first_frame[i,:,:],2).view(feature_first_frame.size(1),feature_first_frame.size(2))
