@@ -26,7 +26,6 @@ This repository is currently under maintenance, if you are experiencing any prob
 - git clone https://github.com/yumiaomiao-a/LGRR.git
 - cd LGRR
 
- 
 ## Prerequisites:  
 We recommend using the Anaconda to manage the environment.  
 - conda create -n lgrr python=3.6  
