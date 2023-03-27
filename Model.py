@@ -124,7 +124,7 @@ class CDCN(nn.Module):
             torch.nn.Linear(100, 2))
 
 
-    def forward(self, x):	    	# x [3, 256, 256]
+    def forward(self, x):	    	# x == [3, 256, 256]
 
         x_input = x
         x = self.conv1(x)
