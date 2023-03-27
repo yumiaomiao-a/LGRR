@@ -129,7 +129,7 @@ ConsistencyCos = ConsistencyCos()
 
 
 
-#######################evaluation
+#########################evaluation
 def val():
     model.eval()
     val_acc = 0.0
