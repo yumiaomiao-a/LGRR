@@ -17,7 +17,6 @@ of two scales, i.e. patch and image, to encourage local and global
 consistency of feature representations.
 The pipeline of the proposed method is displayed in the img folder.
 
-
 This paper is currently under review, and we will update the paper status here in time. If you use this repository for your research, please consider citing our paper. 
 
 This repository is currently under maintenance, if you are experiencing any problems, please open an issue.
