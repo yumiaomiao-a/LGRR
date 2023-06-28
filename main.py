@@ -20,10 +20,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib
 matplotlib.use('Agg')
 
-
 # read data
 data_dir = './ffdfc23'
-
 
 data_transform = {
     'train':transforms.Compose([
