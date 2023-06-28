@@ -5,7 +5,6 @@ from torch import nn
 import numpy as np
 
 
-
 class Conv2d_cd(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
                  padding=1, dilation=1, groups=1, bias=False, theta=0.7):
